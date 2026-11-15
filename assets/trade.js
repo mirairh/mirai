@@ -48,9 +48,22 @@ var MIRAI_SWAP = {
       symbol: "MIRAI",
       name: "Mirai",
       decimals: 18,
+      /* Contract (CA). null until deploy — the page shows "CA: soon" and the Copy button stays off.
+         Set a 0x address here after launch. That is the only switch for the copy control. */
       address: null,
       ca: "soon",
-      native: false
+      native: false,
+      /* Whole-token supply as a decimal string, e.g. "1000000000". null until the figure is real. */
+      supply: null,
+      /* USD market cap. null until a live $MIRAI price and a published supply exist. Do not guess. */
+      marketCapUsd: null,
+      curve: {
+        /* "soon" keeps an empty bar and "—" amounts. Use "live" or "graduated" only with real numbers. */
+        status: "soon",
+        progress: null,
+        onCurve: null,
+        circulating: null
+      }
     }
   },
   pools: [
@@ -1361,9 +1374,128 @@ var MIRAI_SWAP = {
     });
   }
 
+  function miraiToken() {
+    return CFG.tokens.MIRAI;
+  }
+  function miraiContract() {
+    var addr = miraiToken() && miraiToken().address;
+    if (typeof addr === "string" && /^0x[0-9a-fA-F]{40}$/.test(addr)) return addr;
+    return null;
+  }
+  function formatSupply(raw) {
+    if (raw == null || raw === "") return null;
+    var s = String(raw).trim().replace(/,/g, "");
+    if (!/^\d+(\.\d+)?$/.test(s)) return null;
+    var parts = s.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    var frac = parts[1] ? parts[1].replace(/0+$/, "") : "";
+    return frac ? parts[0] + "." + frac : parts[0];
+  }
+  function curveLive() {
+    var curve = (miraiToken() && miraiToken().curve) || {};
+    return curve.status === "live" || curve.status === "graduated";
+  }
+  function paintCaChips(addr) {
+    var label = addr ? "CA: " + shortAddr(addr) : "CA: soon";
+    var title = addr ? addr : "Contract address not set";
+    each(document.querySelectorAll(".ca-chip, .ca-inline"), function (el) {
+      el.textContent = label;
+      el.title = title;
+    });
+  }
+  function renderMirai() {
+    var token = miraiToken();
+    if (!$("#mirai")) return;
+    var addr = miraiContract();
+    var ca = $("#miraiCa");
+    if (ca) ca.textContent = addr || "CA: soon";
+    var copy = $("#miraiCopy");
+    if (copy) {
+      copy.disabled = !addr;
+      copy.textContent = "Copy";
+      copy.setAttribute("aria-label", addr ? "Copy the $MIRAI contract address" : "Copy is off until the contract address is set");
+    }
+    paintCaChips(addr);
+    var curve = (token && token.curve) || {};
+    var live = curveLive();
+    var status = $("#miraiCurveStatus");
+    var statusText = "Launching soon";
+    if (live && curve.status === "graduated") statusText = "Graduated";
+    else if (live) statusText = "On the curve";
+    if (status) status.textContent = statusText;
+    var progress = live && typeof curve.progress === "number" && isFinite(curve.progress)
+      ? Math.min(1, Math.max(0, curve.progress))
+      : 0;
+    var pct = Math.round(progress * 100);
+    var fill = $("#miraiBarFill");
+    var bar = $("#miraiBar");
+    if (fill) fill.style.width = pct + "%";
+    if (bar) {
+      bar.setAttribute("aria-valuenow", String(pct));
+      bar.setAttribute("aria-valuetext", live ? pct + "% of the curve" : "Launching soon");
+    }
+    var onCurve = $("#miraiOnCurve");
+    var circ = $("#miraiCirc");
+    var supply = $("#miraiSupply");
+    if (onCurve) onCurve.textContent = live ? (formatSupply(curve.onCurve) || "—") : "—";
+    if (circ) circ.textContent = live ? (formatSupply(curve.circulating) || "—") : "—";
+    if (supply) supply.textContent = formatSupply(token && token.supply) || "—";
+    var mcap = $("#miraiMcap");
+    var mcapLabel = $("#miraiMcapLabel");
+    var cap = token && typeof token.marketCapUsd === "number" && isFinite(token.marketCapUsd) && token.marketCapUsd > 0
+      ? token.marketCapUsd
+      : null;
+    if (mcap) mcap.textContent = cap == null ? "—" : formatUsdNumber(cap);
+    if (mcapLabel) mcapLabel.textContent = cap == null ? "Live at launch" : "From the token config";
+  }
+  function copyMiraiCa() {
+    var addr = miraiContract();
+    var stateEl = $("#miraiCopyState");
+    var btn = $("#miraiCopy");
+    if (!addr || !btn || btn.disabled) return;
+    function copied() {
+      btn.textContent = "Copied";
+      if (stateEl) stateEl.textContent = "Address copied.";
+      setTimeout(function () {
+        btn.textContent = "Copy";
+        if (stateEl) stateEl.textContent = "";
+      }, 1600);
+    }
+    function fallback() {
+      var area = document.createElement("textarea");
+      area.value = addr;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.left = "-9999px";
+      document.body.appendChild(area);
+      area.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (err) { ok = false; }
+      document.body.removeChild(area);
+      if (!ok) throw new Error("copy");
+    }
+    var pending = navigator.clipboard && navigator.clipboard.writeText
+      ? navigator.clipboard.writeText(addr)
+      : Promise.reject(new Error("no clipboard"));
+    pending.then(copied).catch(function () {
+      try {
+        fallback();
+        copied();
+      } catch (err) {
+        if (stateEl) stateEl.textContent = "Could not copy. Select the address instead.";
+      }
+    });
+  }
+  function initMiraiPage() {
+    renderMirai();
+    var btn = $("#miraiCopy");
+    if (btn) btn.addEventListener("click", copyMiraiCa);
+  }
+
   function init() {
     if (!$("#swapAction")) return;
     buildLiqControls();
+    initMiraiPage();
     bind();
     watchNav();
     document.addEventListener("mirai:wallet", function (e) { onWallet(e.detail); });

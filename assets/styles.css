@@ -1329,15 +1329,95 @@ select.text-input { color-scheme: dark; cursor: pointer; }
   margin: 0;
 }
 
+/* $MIRAI token section */
+.mirai-ca-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+.mirai-addr {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 46, 77, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  word-break: break-all;
+}
+#miraiCopy:disabled,
+#miraiCopy:disabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.mirai-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.8fr);
+  gap: 16px;
+  align-items: stretch;
+  margin-bottom: 16px;
+}
+.mirai-curve .panel-head { align-items: center; gap: 12px; }
+.mirai-curve .panel-head h3 { font-size: 18px; }
+.mirai-curve .bar {
+  height: 8px;
+  margin: 4px 0 14px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(60, 239, 255, 0.28);
+}
+.mirai-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 16px;
+}
+.mirai-stats dt {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.mirai-stats dd {
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+}
+.mirai-mcap { padding: 18px; display: flex; flex-direction: column; }
+.mirai-mcap .pool-figure { margin-top: 8px; }
+.mirai-roles,
+.mirai-buy {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.mirai-roles { margin-bottom: 28px; }
+.mirai-subhead { margin: 8px 0 8px; font-size: clamp(24px, 3vw, 32px); }
+.mirai-buy { margin-bottom: 8px; }
+.mirai-buy .btn { margin-top: 14px; }
+.mirai-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 22px;
+  margin-top: 18px;
+}
+
 @media (max-width: 960px) {
   .swap-layout { grid-template-columns: minmax(0, 1fr); }
   .ref-strip { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .mirai-top, .mirai-roles, .mirai-buy { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 720px) {
   section[id] { scroll-margin-top: 188px; }
   .swap-amount { font-size: 22px; }
   .swap-aside .amt, .pool-figure { font-size: 26px; }
-  .pool-stats { grid-template-columns: minmax(0, 1fr); }
+  .pool-stats, .mirai-stats { grid-template-columns: minmax(0, 1fr); }
   .ref-strip { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .ticket dl { grid-template-columns: minmax(0, auto) minmax(0, 1fr); }
   .pool-tools, .pool-sort { flex-direction: column; flex-basis: auto; width: 100%; }

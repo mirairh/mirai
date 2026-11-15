@@ -148,7 +148,7 @@
 
   function initReveals() {
     var blocks = $all(
-      "#markets, #desk, #swap, #pools, #compare, #privacy, #steps, #liquidity, #faq, #liveBar, .colophon, .session-note"
+      "#markets, #desk, #swap, #pools, #mirai, #compare, #privacy, #steps, #liquidity, #faq, #liveBar, .colophon, .session-note"
     );
     blocks.forEach(function (el) {
       el.classList.add("reveal");
