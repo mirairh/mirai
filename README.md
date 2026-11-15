@@ -4,16 +4,16 @@ Neo-Tokyo styled live market site for a planned project on Robinhood Chain via P
 
 ![Mirai desktop preview](screens/desktop.jpg)
 
-Mirai is a static desk for stock-token markets: dark indigo, neon crimson, violet, and cyan, with the 未来 mark. The board shows live pool prices. The contract address is **CA: soon**.
+Mirai is a static desk for stock-token markets: dark indigo, neon crimson, violet, and cyan, with the 未来 mark. The board shows live pool prices. The $MIRAI contract on Robinhood Chain is `0x9de938fe13556ed64d56ba7d288a431aac287561` (ERC-20, 18 decimals, total supply 1,000,000,000). It trades on [Pons](https://ponsfamily.com/launchpad/0x9de938fe13556ed64d56ba7d288a431aac287561).
 
 The page is plain HTML, CSS, and JavaScript. There is no build step.
 
 ## Features
 
 - **Live prices.** Last price, 24h change, volume, and liquidity come from Robinhood Chain USDG pools (DexScreener). Historical candles (15m / 1h / 4h / 1d) come from GeckoTerminal. Quotes refresh about every 20 seconds.
-- **Swap.** A DEX-style card for ETH, USDC, and MIRAI. ETH uses the live deepest WETH/USDG pool. USDC is shown at one dollar because no canonical USDC address is set. MIRAI is marked CA: soon, and the button reads “Trading opens at launch”. Token addresses live in `MIRAI_SWAP` at the top of `assets/trade.js`. No swap transaction is sent.
-- **Pools.** Summary totals stay blank (“—” / “Live at launch”). The pool list (MIRAI/ETH, MIRAI/USDC, ETH/USDC) does not invent TVL, volume, or APR. A separate reference strip shows the real WETH/USDG market. Add-liquidity for a MIRAI pair stays on “Opens at launch”.
-- **$MIRAI.** A token section (nav: $MIRAI) for the community token: contract line, Pons curve, market cap, what it is for, and how a buy would work at launch. Supply, market cap, and curve amounts stay blank until they are set on `MIRAI` inside `MIRAI_SWAP`. Copy stays off while the address is null.
+- **Swap.** A DEX-style card for ETH, USDC, and MIRAI. ETH uses the live deepest WETH/USDG pool. USDC is shown at one dollar because no canonical USDC address is set. A MIRAI leg opens Pons instead of sending a transaction. Token addresses live in `MIRAI_SWAP` at the top of `assets/trade.js`.
+- **Pools.** Summary totals stay blank (“—” / “Live soon”). The pool list does not invent TVL, volume, or APR. A separate reference strip shows the real WETH/USDG market. MIRAI pairs link to Pons.
+- **$MIRAI.** Contract address, explorer link, and Pons link. Supply is the on-chain totalSupply. Market cap and curve progress stay “Live soon”: DexScreener has no MIRAI pair, and the Pons market response is not readable from this page.
 - **Animated UI.** Perspective grid, particles, scanlines, scroll reveals, a live ticker, chart draw-in, and a wireframe hero. Motion follows `prefers-reduced-motion`.
 - **Multi-wallet connect.** EIP-6963 lists injected wallets such as MetaMask, OKX Wallet, and Rabby, with a fallback to `window.ethereum` / `window.okxwallet`.
 - **Robinhood Chain.** After you approve accounts, the page switches to or adds Robinhood Chain mainnet, chain ID **4663** (RPC `https://rpc.mainnet.chain.robinhood.com`, explorer `https://robinhoodchain.blockscout.com`).

@@ -4,7 +4,9 @@
  * live. Wire a router later by editing this object — the page never sends a
  * transaction while execution stays off.
  *
- * MIRAI.address is null until deploy ("CA soon"). Leave ca: "soon" until then.
+ * MIRAI.address is the deployed ERC-20. Supply is totalSupply from that contract.
+ * Market cap and curve progress stay unset here: DexScreener has no pair, and the
+ * Pons market response is not readable from this page. Do not paste a stale cap.
  * USDC.address is null on purpose: Robinhood Chain's published dollar token is
  * USDG (docs.robinhood.com/chain/contracts). Do not paste an unverified USDC.
  * ETH is the native gas token. wrapped is the canonical WETH address.
@@ -48,17 +50,17 @@ var MIRAI_SWAP = {
       symbol: "MIRAI",
       name: "Mirai",
       decimals: 18,
-      /* Contract (CA). null until deploy — the page shows "CA: soon" and the Copy button stays off.
-         Set a 0x address here after launch. That is the only switch for the copy control. */
-      address: null,
-      ca: "soon",
+      /* ERC-20 on Robinhood Chain, read from the contract: name MIRAI, symbol MIRAI, decimals 18, totalSupply 1e9. */
+      address: "0x9de938fe13556ed64d56ba7d288a431aac287561",
       native: false,
-      /* Whole-token supply as a decimal string, e.g. "1000000000". null until the figure is real. */
-      supply: null,
-      /* USD market cap. null until a live $MIRAI price and a published supply exist. Do not guess. */
+      /* Whole-token totalSupply from the contract. */
+      supply: "1000000000",
+      /* USD market cap. null while this page cannot read a live feed. Do not paste a snapshot. */
       marketCapUsd: null,
+      explorerUrl: "https://robinhoodchain.blockscout.com/token/0x9de938fe13556ed64d56ba7d288a431aac287561",
+      ponsUrl: "https://ponsfamily.com/launchpad/0x9de938fe13556ed64d56ba7d288a431aac287561",
       curve: {
-        /* "soon" keeps an empty bar and "—" amounts. Use "live" or "graduated" only with real numbers. */
+        /* progress, onCurve, and circulating stay null until a feed this page can read returns them. */
         status: "soon",
         progress: null,
         onCurve: null,
@@ -392,7 +394,16 @@ var MIRAI_SWAP = {
   function actionFor(quote) {
     var parsed = quote.parsed || { kind: "empty" };
     if (involvesMirai()) {
-      return { id: "launch", label: "Trading opens at launch", enabled: false, hint: "MIRAI has no contract address yet (CA: soon). This button will not send a transaction." };
+      if (miraiContract()) {
+        return {
+          id: "pons",
+          label: "Trade on Pons",
+          enabled: true,
+          href: ponsUrl(),
+          hint: "MIRAI trades on Pons. This card does not send a transaction."
+        };
+      }
+      return { id: "launch", label: "Trading opens at launch", enabled: false, hint: "MIRAI has no contract address yet. This button will not send a transaction." };
     }
     var w = state.wallet || {};
     if (!w.connected) {
@@ -511,7 +522,7 @@ var MIRAI_SWAP = {
     if (rateBtn) {
       var live = !!(state.ethUsd && !involvesMirai());
       rateBtn.classList.toggle("is-live", live);
-      if (involvesMirai()) rateBtn.textContent = "Trading opens at launch";
+      if (involvesMirai()) rateBtn.textContent = miraiContract() ? "Live soon" : "Trading opens at launch";
       else if (!state.ethUsd) rateBtn.textContent = state.priceError && state.priceError.indexOf("held") === -1 ? "Price unavailable" : "Fetching live price…";
       else if (state.invert) rateBtn.textContent = "1 USDC = " + formatUnits(parseUnits((1 / state.ethUsd).toFixed(8), 8), 8, 8, false) + " ETH";
       else rateBtn.textContent = "1 ETH = " + state.ethUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " USDC";
@@ -545,7 +556,7 @@ var MIRAI_SWAP = {
     }
     var route = $("#routeOut");
     if (route) {
-      if (involvesMirai()) route.textContent = "Opens at launch";
+      if (involvesMirai()) route.textContent = miraiContract() ? "Pons · no swap is sent from this page" : "Opens at launch";
       else if (state.ref) route.textContent = "Indicative · " + state.ref.dex + " WETH/USDG · no swap is sent";
       else route.textContent = "—";
     }
@@ -562,11 +573,18 @@ var MIRAI_SWAP = {
       btn.textContent = action.label;
       btn.disabled = !action.enabled;
       btn.setAttribute("data-action", action.id);
+      if (action.href) btn.setAttribute("data-href", action.href);
+      else btn.removeAttribute("data-href");
     }
     var hint = $("#swapHint");
     if (hint) hint.textContent = action.hint || "";
     var banner = $("#launchBanner");
-    if (banner) banner.hidden = !involvesMirai();
+    if (banner) {
+      banner.hidden = !involvesMirai();
+      if (involvesMirai() && miraiContract()) {
+        banner.textContent = "MIRAI trades on Pons. This card does not send a swap.";
+      }
+    }
     each(document.querySelectorAll("#slipSeg [data-slip]"), function (b) {
       var on = b.getAttribute("data-slip") === state.slip;
       b.setAttribute("aria-pressed", on ? "true" : "false");
@@ -665,7 +683,7 @@ var MIRAI_SWAP = {
     return p.base + "/" + p.quote;
   }
   function pairSub(p) {
-    if (poolLaunch(p)) return "Opens at launch";
+    if (poolLaunch(p)) return miraiContract() ? "Trades on Pons" : "Opens at launch";
     if (state.ethUsd && p.base === "ETH" && p.quote === "USDC") {
       return "Ref. " + formatUsdNumber(state.ethUsd) + " · no pool listed";
     }
@@ -673,7 +691,10 @@ var MIRAI_SWAP = {
   }
   function detailCopy(p) {
     if (poolLaunch(p)) {
-      return "This pool is not live. MIRAI has no contract address (CA: soon), so fee tier, TVL, 24h volume, and APR are not shown and are not estimated.";
+      if (miraiContract()) {
+        return "MIRAI trades on Pons, not in a pool listed here. Fee tier, TVL, 24h volume, and APR stay blank. This page does not estimate them and does not send a trade.";
+      }
+      return "This pool is not live. MIRAI has no contract address, so fee tier, TVL, 24h volume, and APR are not shown and are not estimated.";
     }
     var price = state.ethUsd ? formatUsdNumber(state.ethUsd) : "still loading";
     return "No ETH/USDC pool is configured on this page. Robinhood Chain publishes USDG, not a canonical USDC address, so liquidity and volume are left blank. The live ETH price is " + price + " from the deepest WETH/USDG pool on DexScreener.";
@@ -725,7 +746,9 @@ var MIRAI_SWAP = {
           "<td class=\"num right\" data-label=\"Volume 24h\">—</td>" +
           "<td class=\"num right\" data-label=\"APR\">—</td>" +
           "<td data-label=\"Actions\"><div class=\"pool-actions\">" +
-            "<button type=\"button\" class=\"btn btn-ghost btn-small\" data-liq=\"" + esc(p.id) + "\">Add liquidity</button>" +
+            (poolLaunch(p) && miraiContract()
+              ? "<a class=\"btn btn-ghost btn-small\" href=\"" + esc(ponsUrl()) + "\" target=\"_blank\" rel=\"noopener noreferrer\">Trade on Pons</a>"
+              : "<button type=\"button\" class=\"btn btn-ghost btn-small\" data-liq=\"" + esc(p.id) + "\">Add liquidity</button>") +
             "<button type=\"button\" class=\"btn btn-ghost btn-small\" data-detail=\"" + esc(p.id) + "\" aria-expanded=\"" + (open ? "true" : "false") + "\">Details</button>" +
           "</div></td>" +
         "</tr>" +
@@ -858,15 +881,32 @@ var MIRAI_SWAP = {
       }
     }
     var submit = $("#liqSubmit");
+    var tradeOnPons = launch && miraiContract();
     if (submit) {
-      submit.disabled = true;
-      submit.textContent = launch ? "Opens at launch" : "Not available yet";
+      if (tradeOnPons) {
+        submit.disabled = false;
+        submit.textContent = "Trade on Pons";
+        submit.setAttribute("data-href", ponsUrl());
+      } else {
+        submit.disabled = true;
+        submit.removeAttribute("data-href");
+        submit.textContent = launch ? "Opens at launch" : "Not available yet";
+      }
+    }
+    var liqBanner = $("#liqBanner");
+    if (liqBanner) {
+      liqBanner.hidden = !launch;
+      liqBanner.textContent = tradeOnPons
+        ? "MIRAI trades on Pons. This form does not send a transaction."
+        : "Opens at launch. MIRAI has no contract address yet.";
     }
     var hint = $("#liqHint");
     if (hint) {
-      hint.textContent = launch
-        ? "MIRAI pools open at launch. This button will not send a transaction."
-        : "No ETH/USDC pool is configured, and this form does not send a transaction.";
+      hint.textContent = tradeOnPons
+        ? "This form does not add liquidity. The market is on Pons."
+        : (launch
+          ? "MIRAI pools open at launch. This button will not send a transaction."
+          : "No ETH/USDC pool is configured, and this form does not send a transaction.");
     }
   }
 
@@ -1292,6 +1332,11 @@ var MIRAI_SWAP = {
     var action = $("#swapAction");
     if (action) action.addEventListener("click", function () {
       var id = action.getAttribute("data-action");
+      if (id === "pons") {
+        var href = action.getAttribute("data-href");
+        if (href) window.open(href, "_blank", "noopener,noreferrer");
+        return;
+      }
       if (!window.MiraiDesk) return;
       if (id === "connect") window.MiraiDesk.openWallet();
       if (id === "switch") {
@@ -1355,6 +1400,12 @@ var MIRAI_SWAP = {
     var liqMaxPrice = $("#liqMaxPrice");
     if (liqMin) liqMin.addEventListener("input", renderLiq);
     if (liqMaxPrice) liqMaxPrice.addEventListener("input", renderLiq);
+    var liqSubmit = $("#liqSubmit");
+    if (liqSubmit) liqSubmit.addEventListener("click", function () {
+      var href = liqSubmit.getAttribute("data-href");
+      if (!href || liqSubmit.disabled) return;
+      window.open(href, "_blank", "noopener,noreferrer");
+    });
     var liqClose = $("#liqClose");
     var liqVeil = $("#liqVeil");
     if (liqClose) liqClose.addEventListener("click", closeLiq);
@@ -1395,13 +1446,41 @@ var MIRAI_SWAP = {
     var curve = (miraiToken() && miraiToken().curve) || {};
     return curve.status === "live" || curve.status === "graduated";
   }
+  function ponsUrl() {
+    var t = miraiToken();
+    if (t && t.ponsUrl) return t.ponsUrl;
+    var addr = miraiContract();
+    return addr ? "https://ponsfamily.com/launchpad/" + addr : "";
+  }
+  function explorerUrl() {
+    var t = miraiToken();
+    if (t && t.explorerUrl) return t.explorerUrl;
+    var addr = miraiContract();
+    return addr ? "https://robinhoodchain.blockscout.com/token/" + addr : "";
+  }
   function paintCaChips(addr) {
-    var label = addr ? "CA: " + shortAddr(addr) : "CA: soon";
-    var title = addr ? addr : "Contract address not set";
+    var shortLabel = addr ? shortAddr(addr) : "CA: soon";
+    var fullLabel = addr || "CA: soon";
     each(document.querySelectorAll(".ca-chip, .ca-inline"), function (el) {
-      el.textContent = label;
-      el.title = title;
+      el.textContent = el.classList.contains("footer-ca") ? fullLabel : shortLabel;
+      el.title = addr || "Contract address not set";
+      if (el.tagName === "A" && explorerUrl()) el.href = explorerUrl();
     });
+  }
+  function setExternal(id, href) {
+    var a = $(id);
+    if (!a) return;
+    if (!href) {
+      a.hidden = true;
+      return;
+    }
+    a.hidden = false;
+    a.href = href;
+  }
+  function blankFigure(value, launched) {
+    var formatted = formatSupply(value);
+    if (formatted) return formatted;
+    return launched ? "Live soon" : "—";
   }
   function renderMirai() {
     var token = miraiToken();
@@ -1416,37 +1495,45 @@ var MIRAI_SWAP = {
       copy.setAttribute("aria-label", addr ? "Copy the $MIRAI contract address" : "Copy is off until the contract address is set");
     }
     paintCaChips(addr);
+    setExternal("#miraiExplorer", explorerUrl());
+    setExternal("#miraiPons", ponsUrl());
+    setExternal("#miraiBuyLink", ponsUrl());
     var curve = (token && token.curve) || {};
     var live = curveLive();
+    var hasProgress = typeof curve.progress === "number" && isFinite(curve.progress);
     var status = $("#miraiCurveStatus");
-    var statusText = "Launching soon";
+    var statusText = addr ? "Live on Pons" : "Launching soon";
     if (live && curve.status === "graduated") statusText = "Graduated";
-    else if (live) statusText = "On the curve";
+    else if (hasProgress) statusText = "On the curve";
     if (status) status.textContent = statusText;
-    var progress = live && typeof curve.progress === "number" && isFinite(curve.progress)
-      ? Math.min(1, Math.max(0, curve.progress))
-      : 0;
+    var progress = hasProgress ? Math.min(1, Math.max(0, curve.progress)) : 0;
     var pct = Math.round(progress * 100);
     var fill = $("#miraiBarFill");
     var bar = $("#miraiBar");
-    if (fill) fill.style.width = pct + "%";
-    if (bar) {
+    var progressNote = $("#miraiProgressNote");
+    if (bar) bar.hidden = !hasProgress;
+    if (fill && hasProgress) fill.style.width = pct + "%";
+    if (bar && hasProgress) {
       bar.setAttribute("aria-valuenow", String(pct));
-      bar.setAttribute("aria-valuetext", live ? pct + "% of the curve" : "Launching soon");
+      bar.setAttribute("aria-valuetext", pct + "% of the curve");
+    }
+    if (progressNote) {
+      progressNote.hidden = hasProgress;
+      progressNote.textContent = addr ? "Curve progress: Live soon" : "Curve progress shows after launch.";
     }
     var onCurve = $("#miraiOnCurve");
     var circ = $("#miraiCirc");
     var supply = $("#miraiSupply");
-    if (onCurve) onCurve.textContent = live ? (formatSupply(curve.onCurve) || "—") : "—";
-    if (circ) circ.textContent = live ? (formatSupply(curve.circulating) || "—") : "—";
-    if (supply) supply.textContent = formatSupply(token && token.supply) || "—";
+    if (onCurve) onCurve.textContent = blankFigure(hasProgress || live ? curve.onCurve : null, !!addr);
+    if (circ) circ.textContent = blankFigure(curve.circulating, !!addr);
+    if (supply) supply.textContent = formatSupply(token && token.supply) || (addr ? "Live soon" : "—");
     var mcap = $("#miraiMcap");
     var mcapLabel = $("#miraiMcapLabel");
     var cap = token && typeof token.marketCapUsd === "number" && isFinite(token.marketCapUsd) && token.marketCapUsd > 0
       ? token.marketCapUsd
       : null;
     if (mcap) mcap.textContent = cap == null ? "—" : formatUsdNumber(cap);
-    if (mcapLabel) mcapLabel.textContent = cap == null ? "Live at launch" : "From the token config";
+    if (mcapLabel) mcapLabel.textContent = cap == null ? (addr ? "Live soon" : "Live at launch") : "From the token config";
   }
   function copyMiraiCa() {
     var addr = miraiContract();
