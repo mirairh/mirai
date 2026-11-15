@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Mirai is a private market for stock tokens on Robinhood Chain. Buy the token, or trade its price with up to 2× leverage. Your balances stay private.">
+  <title>Mirai — Private markets for stock tokens</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <canvas id="atmosphere" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="kanji-mark" aria-hidden="true">未来</div>
+  <div class="scroll-progress" aria-hidden="true"><i id="scrollProgress"></i></div>
+
+  <header class="site-header">
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track" id="tickerTrack"></div>
+    </div>
+    <div class="top">
+      <a class="brand" href="#top" id="top">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+          <defs>
+            <linearGradient id="logoGlow" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#3cefff"/>
+              <stop offset="1" stop-color="#ff2e4d"/>
+            </linearGradient>
+          </defs>
+          <rect x="5" y="7" width="3.2" height="18" rx="0.4" fill="url(#logoGlow)"/>
+          <rect x="23.8" y="7" width="3.2" height="18" rx="0.4" fill="url(#logoGlow)"/>
+          <rect x="2" y="5" width="28" height="2.4" rx="0.4" fill="#ff2e4d"/>
+          <rect x="6.5" y="15" width="19" height="1.8" rx="0.3" fill="#3cefff"/>
+        </svg>
+        <span class="brand-text">
+          <span class="brand-word">MIRAI</span>
+          <span class="brand-jp">未来</span>
+        </span>
+      </a>
+      <nav class="nav" aria-label="Sections">
+        <a href="#markets">Markets</a>
+        <a href="#desk">Desk</a>
+        <a href="#compare">Compare</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#steps">Start</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="header-actions">
+        <span class="ca-chip" title="Contract address">CA: soon</span>
+        <a class="icon-link" data-link="github" href="#" aria-label="GitHub (soon)" title="GitHub (soon)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0 1 12 6.844a9.54 9.54 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+        </a>
+        <a class="icon-link" data-link="x" href="#" aria-label="X (soon)" title="X (soon)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2H21.5l-7.5 8.57L22.5 22h-6.56l-5.14-6.71L5.5 22H2.24l8.03-9.17L1.5 2h6.74l4.64 6.15L18.244 2zm-1.15 18h1.8L7.01 3.86H5.08L17.094 20z"/></svg>
+        </a>
+        <div class="wallet-slot">
+          <button type="button" class="btn" data-open-wallet id="connectBtn">Connect wallet</button>
+          <div class="wallet-connected" id="walletConnected" hidden>
+            <button type="button" class="wallet-chip" id="walletChip" aria-expanded="false" aria-haspopup="true">
+              <span class="wallet-addr" id="walletAddr"></span>
+              <span class="wallet-net" id="walletNet"></span>
+            </button>
+            <div class="wallet-drop" id="walletDrop" hidden>
+              <button type="button" class="wallet-drop-btn" id="walletSwitch" hidden>Switch to Robinhood Chain</button>
+              <button type="button" class="wallet-drop-btn" id="walletDisconnect">Disconnect</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero" aria-labelledby="title">
+      <div class="hero-copy">
+        <p class="kicker">Robinhood Chain · Live prices</p>
+        <h1 class="masthead" id="title">MIRAI</h1>
+        <p class="jp-sub" lang="ja">未来 — the future of private markets</p>
+        <p class="lede">Private markets for stock tokens. Buy the token, or trade its price. Your book stays yours.</p>
+        <p class="intro">Trade TSLA, AMZN, PLTR, NFLX, and AMD tokens on Robinhood Chain. Go long or short with up to 2× leverage, or just hold the token. Balances stay on a private receipt — not a public book. Prices on this page are live. You can connect a wallet; execution is still a preview.</p>
+        <p class="folio">Live prices · Preview desk · No orders routed</p>
+      </div>
+      <div class="hero-visual parallax" data-speed="0.12" aria-hidden="true">
+        <div class="orb">
+          <svg class="wire-orb" viewBox="0 0 400 460" fill="none">
+            <defs>
+              <linearGradient id="neonStroke" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#3cefff"/>
+                <stop offset="0.55" stop-color="#8b6cff"/>
+                <stop offset="1" stop-color="#ff2e4d"/>
+              </linearGradient>
+              <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="2.4" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <g class="grid-floor" stroke="rgba(60,239,255,0.28)" stroke-width="0.8">
+              <path d="M40 360 L360 360 L330 420 L70 420 Z"/>
+              <path d="M72 372 L328 372"/><path d="M90 384 L310 384"/><path d="M108 396 L292 396"/><path d="M126 408 L274 408"/>
+              <path d="M80 360 L100 420"/><path d="M130 360 L145 420"/><path d="M180 360 L185 420"/><path d="M220 360 L215 420"/><path d="M270 360 L255 420"/><path d="M320 360 L300 420"/>
+            </g>
+            <g class="rings" filter="url(#softGlow)" stroke="url(#neonStroke)" stroke-width="1.1">
+              <ellipse cx="200" cy="200" rx="118" ry="118"/>
+              <ellipse cx="200" cy="200" rx="118" ry="42"/>
+              <ellipse cx="200" cy="200" rx="42" ry="118"/>
+              <ellipse cx="200" cy="200" rx="90" ry="118" transform="rotate(30 200 200)"/>
+              <ellipse cx="200" cy="200" rx="90" ry="118" transform="rotate(-30 200 200)"/>
+            </g>
+            <g class="torii" filter="url(#softGlow)" stroke="url(#neonStroke)" stroke-width="3.2" stroke-linecap="square">
+              <path d="M118 96 H282"/>
+              <path d="M126 108 H274" stroke-width="2.2"/>
+              <path d="M148 108 V268"/>
+              <path d="M252 108 V268"/>
+              <path d="M148 188 H252" stroke-width="2"/>
+              <path d="M200 108 V188" stroke-width="1.4"/>
+            </g>
+            <g class="skyline" stroke-width="1.2" stroke-linecap="round">
+              <g stroke="#3cefff"><path d="M86 348 V328"/><rect x="82" y="318" width="8" height="16" fill="#3cefff" fill-opacity="0.25" stroke="#3cefff"/></g>
+              <g stroke="#ff2e4d"><path d="M112 348 V300"/><rect x="108" y="312" width="8" height="20" fill="#ff2e4d" fill-opacity="0.3" stroke="#ff2e4d"/></g>
+              <g stroke="#3cefff"><path d="M138 348 V310"/><rect x="134" y="300" width="8" height="22" fill="#3cefff" fill-opacity="0.25" stroke="#3cefff"/></g>
+              <g stroke="#ff2e4d"><path d="M268 348 V318"/><rect x="264" y="324" width="8" height="14" fill="#ff2e4d" fill-opacity="0.3" stroke="#ff2e4d"/></g>
+              <g stroke="#3cefff"><path d="M294 348 V292"/><rect x="290" y="304" width="8" height="22" fill="#3cefff" fill-opacity="0.25" stroke="#3cefff"/></g>
+              <g stroke="#ff2e4d"><path d="M320 348 V330"/><rect x="316" y="320" width="8" height="16" fill="#ff2e4d" fill-opacity="0.3" stroke="#ff2e4d"/></g>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <div class="live-bar" id="liveBar">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span id="liveStatus">Fetching live prices…</span>
+      <span class="fine" id="liveSource"></span>
+    </div>
+    <p class="session-note" id="sessionNote" hidden>US cash equities are closed. Robinhood Chain token prices still print around the clock — the last live pool price is shown.</p>
+
+    <section id="markets">
+      <p class="kicker">Markets</p>
+      <h2>Live board</h2>
+      <p class="note">Last price, 24h change, volume, and liquidity from the deepest USDG pool for each token on Robinhood Chain. Select a row to load it on the desk. Not an offer to trade.</p>
+      <div class="ledger-wrap">
+        <table class="ledger" aria-label="Live market board">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th class="right">Last</th>
+              <th class="right">24h</th>
+              <th class="right">Volume</th>
+              <th class="right">Liquidity</th>
+            </tr>
+          </thead>
+          <tbody id="marketRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="desk">
+      <p class="kicker">Desk</p>
+      <h2>Buy the token, or trade the price</h2>
+      <p class="note">Spot buys the token itself. Perps open a long or short against margin, up to 2×. The ticket prices off the live print — fees, proceeds, and liquidation update as you edit size. Preview only: nothing is sent on-chain.</p>
+
+      <div class="desk-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Price</h3>
+            <span class="fine" id="deskSymbol">TSLA</span>
+          </div>
+          <div class="seg interval-seg" role="group" aria-label="Chart interval">
+            <button type="button" data-interval="15m" aria-pressed="false">15m</button>
+            <button type="button" data-interval="1h" aria-pressed="true">1h</button>
+            <button type="button" data-interval="4h" aria-pressed="false">4h</button>
+            <button type="button" data-interval="1d" aria-pressed="false">1d</button>
+          </div>
+          <div class="chart-box">
+            <canvas id="priceChart" role="img" aria-label="Live historical price chart"></canvas>
+          </div>
+          <div class="chart-meta" id="chartMeta"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Ticket</h3>
+            <span class="fine" id="outPrice"></span>
+          </div>
+          <p class="ca-inline">CA: soon</p>
+
+          <div class="field">
+            <label>Type</label>
+            <div class="seg" role="group" aria-label="Spot or perps">
+              <button type="button" data-mode="spot" aria-pressed="true">Spot</button>
+              <button type="button" data-mode="perps" aria-pressed="false">Perps</button>
+            </div>
+          </div>
+
+          <div class="field" id="sideField" hidden>
+            <label>Side</label>
+            <div class="seg ok danger" role="group" aria-label="Long or short">
+              <button type="button" data-side="long" aria-pressed="true">Long</button>
+              <button type="button" data-side="short" aria-pressed="false">Short</button>
+            </div>
+          </div>
+
+          <div class="pair">
+            <div class="field">
+              <label for="sizeInput">Size, USD</label>
+              <input id="sizeInput" type="number" min="0" step="1" value="10" inputmode="decimal">
+            </div>
+            <div class="field" id="leverageField" hidden>
+              <label>Leverage</label>
+              <div class="seg" role="group" aria-label="Leverage">
+                <button type="button" data-lev="1" aria-pressed="false">1×</button>
+                <button type="button" data-lev="1.5" aria-pressed="false">1.5×</button>
+                <button type="button" data-lev="2" aria-pressed="true">2×</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ticket">
+            <dl>
+              <dt>You get</dt>
+              <dd class="emph" id="outGet">—</dd>
+              <dt>Fee</dt>
+              <dd id="outFee">—</dd>
+              <dt>Liquidation</dt>
+              <dd id="outLiq">—</dd>
+            </dl>
+            <p class="hint" id="outNote"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="holdings-head">
+        <div>
+          <p class="kicker" style="margin:0">Your book</p>
+          <h3>Holdings</h3>
+        </div>
+        <button type="button" class="icon-btn" id="toggleHoldings" aria-pressed="true">Show figures</button>
+      </div>
+      <p class="note">Hide balances here the way a public observer would see them. This is a preview book marked to the live price — not a live account.</p>
+      <div class="ledger-wrap">
+        <table class="ledger" aria-label="Preview holdings, marked to live prices">
+          <thead>
+            <tr>
+              <th>Line</th>
+              <th class="right">Value</th>
+            </tr>
+          </thead>
+          <tbody id="holdingRows"></tbody>
+          <tfoot>
+            <tr>
+              <td><strong>Total</strong></td>
+              <td class="num right"><strong id="holdingTotal">••••••</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <section id="compare">
+      <p class="kicker">Spot vs perps</p>
+      <h2>Own it, or trade it</h2>
+      <p class="note">The same $1,000, two ways: hold the token, or run a 2× long on its price, marked from the live print. Drag the slider to see how each book would move. A leveraged long can be closed out long before the token is worthless. Preview only — not an order.</p>
+      <p class="slider-read" id="moveRead">If the token moves +0.0%</p>
+      <div class="slider-wrap">
+        <label class="kicker" for="moveSlider">Change in the token’s price</label>
+        <input id="moveSlider" type="range" min="-50" max="50" step="0.5" value="10">
+        <div class="slider-scale"><span>−50%</span><span>0</span><span>+50%</span></div>
+      </div>
+      <div class="compare-grid">
+        <div class="compare-card">
+          <p class="kicker">Spot · $1,000 holding</p>
+          <h3>The token</h3>
+          <p class="amt" id="cmpSpot">+$0.00</p>
+          <p class="hint" id="cmpSpotNote"></p>
+        </div>
+        <div class="compare-card">
+          <p class="kicker">Perps · $1,000 margin, 2× long</p>
+          <h3>The price, 2×</h3>
+          <p class="amt" id="cmpPerp">+$0.00</p>
+          <p class="hint" id="cmpPerpNote"></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="privacy">
+      <div class="privacy-toggle">
+        <div>
+          <p class="kicker">Privacy</p>
+          <h2>What you see, and what others see</h2>
+          <p class="note" style="margin-bottom:0">Your position does not have to be public. Toggle the view: the private pane is your book; the public pane is what a stranger would read.</p>
+        </div>
+        <div class="switch" role="group" aria-label="Privacy view">
+          <button type="button" data-privacy="you" aria-pressed="true">What you see</button>
+          <button type="button" data-privacy="others" aria-pressed="false">What others see</button>
+        </div>
+      </div>
+
+      <div class="two-see is-private" id="seeBox">
+        <div class="see-pane private-only">
+          <h3>Your receipt</h3>
+          <ul>
+            <li>Wallet (private): <span class="fine">0x8F21…a4c1</span></li>
+            <li>USD collateral: $2,480.15</li>
+            <li>TSLA token: 1.20, marked $429.18</li>
+            <li>AMZN 2× long, entry $214.62, margin $400.00</li>
+            <li>Last receipt: <span class="fine">MIR-1842 · 14 Nov 2026</span></li>
+          </ul>
+        </div>
+        <div class="see-pane public public-only">
+          <h3>Public view</h3>
+          <ul>
+            <li>These markets are open.</li>
+            <li>Anonymized receipt hash: <span class="fine">0x7c1a…e90f</span></li>
+            <li>Balances: <span class="redact">hidden</span></li>
+            <li>Positions: <span class="redact">hidden</span></li>
+            <li>Holder identity: <span class="redact">hidden</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="steps">
+      <p class="kicker">From deposit to receipt</p>
+      <h2>How it will work</h2>
+      <p class="note">The path when the desk opens. On this page, each step is described only — the wallet button will not sign a transaction.</p>
+      <div class="steps">
+        <article class="step">
+          <div class="step-no">01</div>
+          <h3>Connect a wallet</h3>
+          <p>When connection is live, attach a compatible wallet on Robinhood Chain.</p>
+        </article>
+        <article class="step">
+          <div class="step-no">02</div>
+          <h3>Deposit collateral</h3>
+          <p>Place accepted collateral with the market. No deposit is taken on this page.</p>
+        </article>
+        <article class="step">
+          <div class="step-no">03</div>
+          <h3>Get a private receipt</h3>
+          <p>A receipt is written for the deposit. You can read it; a public observer cannot read your balances from it.</p>
+        </article>
+        <article class="step">
+          <div class="step-no">04</div>
+          <h3>Trade</h3>
+          <p>Buy a stock token, or open a long or short on its price, at 1×, 1.5×, or 2×.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="liquidity">
+      <p class="kicker">Depth</p>
+      <h2>Pool liquidity</h2>
+      <p class="note">Liquidity last reported by DexScreener for the USDG pair used on the board. A snapshot of depth, not a promise of a fill.</p>
+      <div class="ledger-wrap">
+        <table class="ledger" aria-label="Live pool liquidity">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th class="right">Pool liquidity</th>
+              <th>Relative</th>
+            </tr>
+          </thead>
+          <tbody id="liqRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="faq" class="faq">
+      <p class="kicker">FAQ</p>
+      <h2>Questions</h2>
+
+      <details open>
+        <summary>Is Mirai live?</summary>
+        <p>The board and the chart use live Robinhood Chain token prices and historical candles. You can connect an injected wallet (MetaMask, OKX Wallet, and others) to Robinhood Chain. Connecting never sends a transaction. The ticket and comparison slider remain a preview: no order is routed and no deposit is taken.</p>
+      </details>
+      <details>
+        <summary>If I buy a stock token, do I own the share?</summary>
+        <p>No. A stock token tracks or references a listed name. It does not confer share ownership, voting rights, dividends, or any claim on the issuer.</p>
+      </details>
+      <details>
+        <summary>How does the privacy model work?</summary>
+        <p>You can read your own balances, positions, and receipts. A public observer sees that markets exist and, at most, an anonymized receipt hash — not your identity, size, or side. This page illustrates that idea; it is not a live cryptographic system.</p>
+      </details>
+      <details>
+        <summary>What leverage is shown here?</summary>
+        <p>Modest gearing only: 1×, 1.5×, or 2×, long or short, and only in the perps ticket. A 2× long is sketched as liquidated after a decline of roughly half, less a small maintenance cushion.</p>
+      </details>
+      <details>
+        <summary>What fee does the ticket use?</summary>
+        <p>Ten basis points (0.10%) on the spot notional, or on the leveraged notional for perps. That rate is a preview assumption, not a posted live fee schedule.</p>
+      </details>
+      <details>
+        <summary>Has the protocol been audited?</summary>
+        <p>No. Mirai, as presented here, has not been audited. Do not treat this page as production software or as a safe venue for funds.</p>
+      </details>
+      <details>
+        <summary>What chain is this built for?</summary>
+        <p>Robinhood Chain. Wallet connection, deposits, and settlement — when they exist — are intended for that network, including any testnet used for trials.</p>
+      </details>
+
+      <aside class="risk" aria-label="Risks and disclaimers">
+        <h3>Risks &amp; disclaimers</h3>
+        <p>This website is a preview of a private market, not an offer to sell securities, tokens, or derivatives, and not a solicitation to deal in any of them. Prices and candles on the board are live Robinhood Chain pool data, sourced from DexScreener and GeckoTerminal, and may be delayed, interrupted, or wrong. The trading ticket is a preview only and does not execute.</p>
+        <p>A stock token is not share ownership. Leverage can extinguish your entire margin, including on a modest 2× position. A testnet or demo book may be reset, delayed, or wrong. The work has not been audited. Nothing on this page is financial, legal, or tax advice. Simulated performance is not an indication of future results.</p>
+        <p>Mirai is an original project name and an original text. It is not affiliated with, endorsed by, or related to Dipnote, Rooq, Robinhood Markets, Inc., or the issuers of the names shown on the board.</p>
+      </aside>
+    </section>
+  </main>
+
+  <footer class="colophon">
+    <div class="footer-brand">
+      <span class="brand-word">MIRAI</span>
+      <span class="brand-jp">未来</span>
+    </div>
+    <p class="end-mark">Built on Robinhood Chain</p>
+    <p class="ca-chip footer-ca">CA: soon</p>
+    <nav class="footer-links" aria-label="Social">
+      <a class="text-link" data-link="github" href="#">GitHub (soon)</a>
+      <a class="text-link" data-link="x" href="#">X (soon)</a>
+    </nav>
+    <div class="credits fine">
+      <p>Live token prices from DexScreener (Robinhood Chain USDG pools). Historical candles from GeckoTerminal. Neither source is affiliated with Mirai.</p>
+      <p>Type: Space Grotesk, Inter, JetBrains Mono, and Noto Sans JP.</p>
+    </div>
+  </footer>
+
+  <div class="modal" id="walletModal" hidden role="dialog" aria-modal="true" aria-labelledby="walletTitle">
+    <div class="veil"></div>
+    <div class="card">
+      <p class="kicker">Wallet</p>
+      <h3 id="walletTitle">Connect a wallet</h3>
+      <p id="walletHelp">Choose an installed wallet. Connecting will not send a transaction — trading stays a preview.</p>
+      <div id="walletList" class="wallet-list" hidden></div>
+      <div id="walletEmpty" class="wallet-empty" hidden>
+        <p>No wallet was found in this browser.</p>
+        <p>Install <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer">MetaMask</a>, or another injected wallet such as OKX Wallet or Rabby, then refresh this page.</p>
+      </div>
+      <p class="hint" id="walletError" hidden></p>
+      <button type="button" class="btn btn-ghost" id="walletClose">Close</button>
+    </div>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+  <script src="assets/motion.js" defer></script>
+</body>
+</html>
