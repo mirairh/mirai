@@ -93,6 +93,12 @@
     requestAnimationFrame(raf);
     document.documentElement.classList.add("has-lenis");
 
+    function headerOffset() {
+      var header = document.querySelector(".site-header");
+      var height = header ? header.getBoundingClientRect().height : 108;
+      return -(height + 16);
+    }
+
     $all('a[href^="#"]').forEach(function (a) {
       a.addEventListener("click", function (e) {
         if (a.getAttribute("aria-disabled") === "true") {
@@ -104,7 +110,7 @@
         var target = document.querySelector(id);
         if (!target) return;
         e.preventDefault();
-        lenis.scrollTo(target, { offset: -72 });
+        lenis.scrollTo(target, { offset: headerOffset() });
       });
     });
 
@@ -126,9 +132,23 @@
     }
   }
 
+  function watchModals() {
+    function sync() {
+      var open = !!document.querySelector(".modal:not([hidden])");
+      if (!lenis) return;
+      if (open) lenis.stop();
+      else lenis.start();
+    }
+    if (!("MutationObserver" in window)) return;
+    var obs = new MutationObserver(sync);
+    $all(".modal").forEach(function (modal) {
+      obs.observe(modal, { attributes: true, attributeFilter: ["hidden"] });
+    });
+  }
+
   function initReveals() {
     var blocks = $all(
-      "#markets, #desk, #compare, #privacy, #steps, #liquidity, #faq, #liveBar, .colophon, .session-note"
+      "#markets, #desk, #swap, #pools, #mirai, #compare, #privacy, #steps, #liquidity, #faq, #liveBar, .colophon, .session-note"
     );
     blocks.forEach(function (el) {
       el.classList.add("reveal");
@@ -369,6 +389,7 @@
     document.body.classList.add("is-ready");
     initAtmosphere();
     initSmoothScroll(LenisCtor || null);
+    watchModals();
     initReveals();
     initParallax();
     initProgress();
