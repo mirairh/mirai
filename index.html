@@ -43,6 +43,8 @@
       <nav class="nav" aria-label="Sections">
         <a href="#markets">Markets</a>
         <a href="#desk">Desk</a>
+        <a href="#swap">Swap</a>
+        <a href="#pools">Pools</a>
         <a href="#compare">Compare</a>
         <a href="#privacy">Privacy</a>
         <a href="#steps">Start</a>
@@ -259,6 +261,207 @@
       </div>
     </section>
 
+    <section id="swap">
+      <p class="kicker">Swap</p>
+      <h2>Swap</h2>
+      <p class="note">A Robinhood Chain swap card. ETH uses the live WETH/USDG price from DexScreener. USDC is shown at one dollar — the chain’s published dollar token is USDG, and no USDC address is set. MIRAI is marked CA: soon. Nothing on this card is sent as a transaction.</p>
+      <div class="swap-layout">
+        <div class="panel swap-card">
+          <div class="panel-head">
+            <h3>Swap</h3>
+            <button type="button" class="icon-btn" id="swapGear" aria-expanded="false" aria-controls="swapSettings">Settings</button>
+          </div>
+          <div class="swap-settings" id="swapSettings" hidden>
+            <p class="kicker">Slippage &amp; deadline</p>
+            <div class="field">
+              <label>Max slippage</label>
+              <div class="seg slip-seg" role="group" aria-label="Max slippage" id="slipSeg">
+                <button type="button" data-slip="auto" aria-pressed="true">Auto</button>
+                <button type="button" data-slip="0.1" aria-pressed="false">0.1%</button>
+                <button type="button" data-slip="0.5" aria-pressed="false">0.5%</button>
+                <button type="button" data-slip="1" aria-pressed="false">1%</button>
+                <button type="button" data-slip="custom" aria-pressed="false">Custom</button>
+              </div>
+              <div class="slip-custom" id="customSlipWrap" hidden>
+                <input id="customSlip" class="text-input" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0.50" aria-label="Custom slippage percent">
+                <span class="fine">%</span>
+              </div>
+              <p class="fine" id="slipHelp">Auto is 0.50% on this preview.</p>
+            </div>
+            <div class="field">
+              <label for="deadlineInput">Deadline</label>
+              <input id="deadlineInput" type="number" min="1" max="4320" step="1" value="30" inputmode="numeric">
+              <p class="fine">Minutes. Stored for a later router. Nothing is sent today.</p>
+            </div>
+          </div>
+          <p class="launch-banner" id="launchBanner" hidden role="status">Trading opens at launch. MIRAI is marked CA: soon — this card will not send a swap.</p>
+          <div class="swap-field">
+            <div class="swap-field-top">
+              <span class="swap-label">You pay</span>
+              <span class="swap-bal">
+                <span class="fine">Balance <span id="fromBal">—</span></span>
+                <button type="button" class="max-btn" id="fromMax" hidden>MAX</button>
+              </span>
+            </div>
+            <div class="swap-field-row">
+              <button type="button" class="token-btn" id="fromTokenBtn" aria-haspopup="dialog" aria-controls="tokenModal">
+                <span class="token-mark" id="fromMark" data-symbol="ETH">E</span>
+                <span id="fromSym">ETH</span>
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <input id="fromAmount" class="swap-amount" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0" aria-label="You pay amount">
+            </div>
+            <div class="swap-fiat" id="fromFiat"></div>
+          </div>
+          <div class="swap-flip-wrap">
+            <button type="button" class="swap-flip" id="swapFlip" aria-label="Flip tokens">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M7 4v11M7 15l-3-3M7 15l3-3M17 20V9M17 9l-3 3M17 9l3 3"/></svg>
+            </button>
+          </div>
+          <div class="swap-field">
+            <div class="swap-field-top">
+              <span class="swap-label">You receive</span>
+              <span class="swap-bal">
+                <span class="fine">Balance <span id="toBal">—</span></span>
+                <button type="button" class="max-btn" id="toMax" hidden>MAX</button>
+              </span>
+            </div>
+            <div class="swap-field-row">
+              <button type="button" class="token-btn" id="toTokenBtn" aria-haspopup="dialog" aria-controls="tokenModal">
+                <span class="token-mark" id="toMark" data-symbol="USDC">U</span>
+                <span id="toSym">USDC</span>
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <input id="toAmount" class="swap-amount" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0" aria-label="You receive amount">
+            </div>
+            <div class="swap-fiat" id="toFiat"></div>
+          </div>
+          <div class="ticket swap-details">
+            <dl>
+              <dt>Rate</dt>
+              <dd><button type="button" class="rate-btn" id="rateBtn">—</button></dd>
+              <dt>Price impact</dt>
+              <dd id="impactOut" title="Not quoted on-chain">—</dd>
+              <dt>Minimum received</dt>
+              <dd id="minOut">—</dd>
+              <dt>Network fee</dt>
+              <dd id="feeOut">—</dd>
+              <dt>Route</dt>
+              <dd id="routeOut">—</dd>
+              <dt>Slippage</dt>
+              <dd id="slipOut">Auto · 0.50%</dd>
+              <dt>Deadline</dt>
+              <dd id="deadlineOut">30 min</dd>
+            </dl>
+          </div>
+          <p class="hint" id="swapHint"></p>
+          <button type="button" class="btn swap-action" id="swapAction" data-action="connect">Connect wallet</button>
+        </div>
+        <aside class="panel swap-aside" aria-label="Reference price and status">
+          <p class="kicker">Reference price</p>
+          <h3>ETH</h3>
+          <p class="amt" id="swapEthPrice">…</p>
+          <p class="hint" id="swapEthChange"></p>
+          <ul class="status-list" id="swapStatus"></ul>
+          <p class="fine" id="swapSource">Fetching the live WETH/USDG pool…</p>
+          <a class="text-link" id="refAsideLink" href="https://dexscreener.com/robinhood" target="_blank" rel="noopener noreferrer" hidden>View pair on DexScreener</a>
+        </aside>
+      </div>
+    </section>
+
+    <section id="pools">
+      <p class="kicker">Pools</p>
+      <h2>Pools</h2>
+      <p class="note">MIRAI pools open at launch. TVL, volume, fees, and APR stay blank — this page will not invent them. The strip under the totals is the live WETH/USDG market, labeled as itself. It is not an ETH/USDC pool.</p>
+      <div class="pool-stats">
+        <article class="panel pool-stat">
+          <p class="kicker">TVL</p>
+          <p class="pool-figure">—</p>
+          <p class="fine">Live at launch</p>
+        </article>
+        <article class="panel pool-stat">
+          <p class="kicker">Volume 24h</p>
+          <p class="pool-figure">—</p>
+          <p class="fine">Live at launch</p>
+        </article>
+        <article class="panel pool-stat">
+          <p class="kicker">Fees 24h</p>
+          <p class="pool-figure">—</p>
+          <p class="fine">Live at launch</p>
+        </article>
+      </div>
+      <div class="panel ref-strip" id="refStrip">
+        <div>
+          <p class="kicker">Reference · not a listed pool</p>
+          <h3 id="refPair">WETH/USDG</h3>
+          <p class="fine" id="refDex">DexScreener</p>
+          <a class="text-link" id="refLink" href="https://dexscreener.com/robinhood" target="_blank" rel="noopener noreferrer" hidden>View pair</a>
+        </div>
+        <div>
+          <p class="kicker">ETH price</p>
+          <p class="pool-figure" id="refPrice">…</p>
+          <p class="fine" id="refChange"></p>
+        </div>
+        <div>
+          <p class="kicker">Pool TVL</p>
+          <p class="pool-figure" id="refTvl">…</p>
+        </div>
+        <div>
+          <p class="kicker">Volume 24h</p>
+          <p class="pool-figure" id="refVol">…</p>
+        </div>
+      </div>
+      <div class="pool-tools">
+        <div class="pool-search">
+          <label class="sr-only" for="poolSearch">Search pools</label>
+          <input id="poolSearch" class="text-input" type="search" placeholder="Search pairs" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="pool-sort">
+          <label class="sr-only" for="poolSort">Sort pools</label>
+          <select id="poolSort" class="text-input" aria-label="Sort pools">
+            <option value="featured">Sort: Featured</option>
+            <option value="pair-asc">Sort: Pair A–Z</option>
+            <option value="pair-desc">Sort: Pair Z–A</option>
+            <option value="fee">Sort: Fee tier</option>
+            <option value="tvl">Sort: TVL</option>
+            <option value="volume">Sort: Volume 24h</option>
+            <option value="apr">Sort: APR</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint" id="poolSortNote" hidden></p>
+      <p class="fine pool-count" id="poolCount"></p>
+      <div class="ledger-wrap">
+        <table class="ledger pool-table" aria-label="Liquidity pools">
+          <thead>
+            <tr>
+              <th>Pair</th>
+              <th class="right">Fee tier</th>
+              <th class="right">TVL</th>
+              <th class="right">Volume 24h</th>
+              <th class="right">APR</th>
+              <th class="right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="poolRows"></tbody>
+        </table>
+      </div>
+      <div class="panel positions-panel">
+        <div class="panel-head">
+          <h3>My positions</h3>
+          <span class="fine" id="positionsMeta">Wallet not connected</span>
+        </div>
+        <div class="empty-state" id="positionsEmpty">
+          <p class="empty-title" id="positionsTitle">No positions</p>
+          <p class="hint" id="positionsCopy">Connect a wallet to prepare this view. No liquidity position is read — pool contracts are not set.</p>
+          <div class="positions-actions">
+            <button type="button" class="btn" id="positionsConnect" data-open-wallet>Connect wallet</button>
+            <button type="button" class="btn" id="positionsSwitch" hidden>Switch to Robinhood Chain</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="compare">
       <p class="kicker">Spot vs perps</p>
       <h2>Own it, or trade it</h2>
@@ -374,7 +577,11 @@
 
       <details open>
         <summary>Is Mirai live?</summary>
-        <p>The board and the chart use live Robinhood Chain token prices and historical candles. You can connect an injected wallet (MetaMask, OKX Wallet, and others) to Robinhood Chain. Connecting never sends a transaction. The ticket and comparison slider remain a preview: no order is routed and no deposit is taken.</p>
+        <p>The board and the chart use live Robinhood Chain token prices and historical candles. You can connect an injected wallet (MetaMask, OKX Wallet, and others) to Robinhood Chain. Connecting never sends a transaction. The ticket, comparison slider, swap card, and pools list remain a preview: no order is routed, no swap is sent, and no deposit is taken.</p>
+      </details>
+      <details>
+        <summary>Does Swap or Pools trade?</summary>
+        <p>No. ETH is priced from the deepest live WETH/USDG pool on Robinhood Chain. USDC has no address in the page config, so it is shown at one dollar and cannot be moved from here. MIRAI is marked CA: soon. The swap button reads Trading opens at launch whenever MIRAI is selected, and it never sends a transaction. Pool TVL, volume, fees, and APR stay blank until a real pool exists.</p>
       </details>
       <details>
         <summary>If I buy a stock token, do I own the share?</summary>
@@ -403,7 +610,7 @@
 
       <aside class="risk" aria-label="Risks and disclaimers">
         <h3>Risks &amp; disclaimers</h3>
-        <p>This website is a preview of a private market, not an offer to sell securities, tokens, or derivatives, and not a solicitation to deal in any of them. Prices and candles on the board are live Robinhood Chain pool data, sourced from DexScreener and GeckoTerminal, and may be delayed, interrupted, or wrong. The trading ticket is a preview only and does not execute.</p>
+        <p>This website is a preview of a private market, not an offer to sell securities, tokens, or derivatives, and not a solicitation to deal in any of them. Prices and candles on the board are live Robinhood Chain pool data, sourced from DexScreener and GeckoTerminal, and may be delayed, interrupted, or wrong. The trading ticket, the swap card, and the pools list do not execute: no order, swap, or liquidity transaction is sent.</p>
         <p>A stock token is not share ownership. Leverage can extinguish your entire margin, including on a modest 2× position. A testnet or demo book may be reset, delayed, or wrong. The work has not been audited. Nothing on this page is financial, legal, or tax advice. Simulated performance is not an indication of future results.</p>
         <p>Mirai is an original project name and an original text. It is not affiliated with, endorsed by, or related to Dipnote, Rooq, Robinhood Markets, Inc., or the issuers of the names shown on the board.</p>
       </aside>
@@ -422,7 +629,7 @@
       <a class="text-link" data-link="x" href="#">X (soon)</a>
     </nav>
     <div class="credits fine">
-      <p>Live token prices from DexScreener (Robinhood Chain USDG pools). Historical candles from GeckoTerminal. Neither source is affiliated with Mirai.</p>
+      <p>Live token prices from DexScreener (Robinhood Chain USDG pools). The swap desk reads ETH from the deepest WETH/USDG pool on the same source. Historical candles from GeckoTerminal. Neither source is affiliated with Mirai.</p>
       <p>Type: Space Grotesk, Inter, JetBrains Mono, and Noto Sans JP.</p>
     </div>
   </footer>
@@ -443,7 +650,89 @@
     </div>
   </div>
 
+  <div class="modal" id="tokenModal" hidden role="dialog" aria-modal="true" aria-labelledby="tokenTitle" data-lenis-prevent>
+    <div class="veil" id="tokenVeil"></div>
+    <div class="card">
+      <p class="kicker">Tokens</p>
+      <h3 id="tokenTitle">Select a token</h3>
+      <input id="tokenSearch" class="text-input" type="search" placeholder="Search name or symbol" autocomplete="off" spellcheck="false" aria-label="Search tokens">
+      <div id="tokenList" class="token-list" role="listbox" aria-label="Tokens"></div>
+      <button type="button" class="btn btn-ghost" id="tokenClose">Close</button>
+    </div>
+  </div>
+
+  <div class="modal" id="liqModal" hidden role="dialog" aria-modal="true" aria-labelledby="liqTitle" data-lenis-prevent>
+    <div class="veil" id="liqVeil"></div>
+    <div class="card card-wide">
+      <p class="kicker">Liquidity</p>
+      <h3 id="liqTitle">Add liquidity</h3>
+      <p id="liqIntro">Pick a pair and a fee tier. This form does not create a position or send a transaction.</p>
+      <p class="launch-banner" id="liqBanner" hidden>Opens at launch. MIRAI has no contract address yet.</p>
+      <div class="field">
+        <label>Pair</label>
+        <div class="seg liq-seg" id="liqPairs" role="group" aria-label="Pair"></div>
+      </div>
+      <div class="field">
+        <label>Fee tier</label>
+        <div class="seg liq-seg" id="liqFees" role="group" aria-label="Fee tier"></div>
+        <p class="fine">A choice for later. No pool is created from this form.</p>
+      </div>
+      <div class="liq-deposits">
+        <div class="swap-field">
+          <div class="swap-field-top">
+            <span class="swap-label" id="liqLabelA">Token A</span>
+            <span class="swap-bal">
+              <span class="fine">Balance <span id="liqBalA">—</span></span>
+              <button type="button" class="max-btn" id="liqMaxA" hidden>MAX</button>
+            </span>
+          </div>
+          <div class="swap-field-row">
+            <span class="token-pill"><span class="token-mark" id="liqMarkA" data-symbol="MIRAI">M</span><span id="liqSymA">MIRAI</span></span>
+            <input id="liqAmountA" class="swap-amount" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" aria-label="Deposit amount A">
+          </div>
+        </div>
+        <div class="swap-field">
+          <div class="swap-field-top">
+            <span class="swap-label" id="liqLabelB">Token B</span>
+            <span class="swap-bal">
+              <span class="fine">Balance <span id="liqBalB">—</span></span>
+              <button type="button" class="max-btn" id="liqMaxB" hidden>MAX</button>
+            </span>
+          </div>
+          <div class="swap-field-row">
+            <span class="token-pill"><span class="token-mark" id="liqMarkB" data-symbol="ETH">E</span><span id="liqSymB">ETH</span></span>
+            <input id="liqAmountB" class="swap-amount" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" aria-label="Deposit amount B">
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Price range</label>
+        <div class="seg" role="group" aria-label="Price range">
+          <button type="button" id="liqRangeFull" data-range="full" aria-pressed="true">Full range</button>
+          <button type="button" id="liqRangeCustom" data-range="custom" aria-pressed="false">Custom</button>
+        </div>
+        <p class="fine" id="liqPriceLine"></p>
+        <div class="liq-range" id="liqCustom" hidden>
+          <div class="pair">
+            <div class="field">
+              <label for="liqMin">Min price</label>
+              <input id="liqMin" class="text-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="Min">
+            </div>
+            <div class="field">
+              <label for="liqMaxPrice">Max price</label>
+              <input id="liqMaxPrice" class="text-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="Max">
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="hint" id="liqHint"></p>
+      <button type="button" class="btn swap-action" id="liqSubmit" disabled>Opens at launch</button>
+      <button type="button" class="btn btn-ghost" id="liqClose">Close</button>
+    </div>
+  </div>
+
   <script src="assets/app.js" defer></script>
+  <script src="assets/trade.js" defer></script>
   <script src="assets/motion.js" defer></script>
 </body>
 </html>

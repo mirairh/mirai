@@ -223,10 +223,10 @@ var MIRAI_LINKS = { github: "https://github.com/mirairh/mirai", x: "https://x.co
     var dpr = window.devicePixelRatio || 1;
     var w = wrap.clientWidth || 600;
     var h = wrap.clientHeight || 280;
-    canvas.width = Math.floor(w * dpr);
-    canvas.height = Math.floor(h * dpr);
     canvas.style.width = w + "px";
     canvas.style.height = h + "px";
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
     var ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
@@ -854,6 +854,7 @@ var MIRAI_LINKS = { github: "https://github.com/mirairh/mirai", x: "https://x.co
       var drop = $("#walletDrop");
       if (drop) drop.hidden = true;
       if (chip) chip.setAttribute("aria-expanded", "false");
+      notifyWallet();
       return;
     }
     if (addr) addr.textContent = shortAddr(wallet.address);
@@ -861,6 +862,14 @@ var MIRAI_LINKS = { github: "https://github.com/mirairh/mirai", x: "https://x.co
     if (net) net.textContent = ok ? "Robinhood Chain" : "Wrong network";
     if (chip) chip.classList.toggle("is-wrong", !ok);
     if (switchBtn) switchBtn.hidden = ok;
+    notifyWallet();
+  }
+
+  function notifyWallet() {
+    if (!window.MiraiDesk || typeof window.MiraiDesk.getWallet !== "function") return;
+    try {
+      document.dispatchEvent(new CustomEvent("mirai:wallet", { detail: window.MiraiDesk.getWallet() }));
+    } catch (err) {}
   }
 
   function closeWalletModal() {
@@ -1137,6 +1146,30 @@ var MIRAI_LINKS = { github: "https://github.com/mirairh/mirai", x: "https://x.co
       drawChart({ instant: true });
     });
   }
+
+  window.MiraiDesk = {
+    openWallet: openWalletModal,
+    switchChain: function () {
+      if (!wallet.provider) return Promise.resolve(false);
+      return ensureChain(wallet.provider).then(function () {
+        return wallet.provider.request({ method: "eth_chainId" });
+      }).then(function (id) {
+        wallet.chainId = id;
+        renderWalletChrome();
+        return true;
+      });
+    },
+    getWallet: function () {
+      var on = !!(wallet.address && wallet.provider);
+      return {
+        connected: on,
+        address: on ? wallet.address : null,
+        chainId: on ? wallet.chainId : null,
+        onRobinhood: on && isRhChain(wallet.chainId),
+        provider: on ? wallet.provider : null
+      };
+    }
+  };
 
   document.addEventListener("DOMContentLoaded", function () {
     applyLinks();
